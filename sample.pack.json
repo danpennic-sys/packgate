@@ -1,0 +1,33 @@
+{
+  "pack_id": "ab4c1bd5b7dd96cc3ad20b24156144dd96c8ae6ca48cbbc7bbb822e81f40ffc4",
+  "created_at_utc": "2026-10-09T15:35:00Z",
+  "service": "packgate",
+  "service_version": "v20261009-A",
+  "gateway_version": "v20261009-G",
+  "request": {
+    "path": "/v1/packgate/close",
+    "body": {
+      "job": "JOB-1001",
+      "customer": "Sample Shop"
+    }
+  },
+  "response": {
+    "status": "closed",
+    "total_cents": 18500,
+    "note": "closed on desk"
+  },
+  "invariants": [
+    "PG-001",
+    "PG-002"
+  ],
+  "runtime_context": {
+    "node_id": "desk",
+    "pod_id": "local",
+    "region": "us-central-1"
+  },
+  "hash_chain": {
+    "prev_hash": "GENESIS",
+    "current_hash": "ab4c1bd5b7dd96cc3ad20b24156144dd96c8ae6ca48cbbc7bbb822e81f40ffc4"
+  },
+  "signature": "signature_placeholder"
+}
