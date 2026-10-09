@@ -1,0 +1,7 @@
+PackGate commercial license
+
+Copyright 2026 Operator Pages LLC. Daniel H. Pennick.
+
+Payment of the Field or Shop price grants one operator a non-exclusive license to use the files in this zip on that operator's own jobs. No redistribution. No SaaS resale. No claim that PackGate is QuantumGuard, post-quantum, or a payment processor.
+
+Support: Field, email for 14 days. Shop, one 20-minute setup call. danpennic@gmail.com.

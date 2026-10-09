@@ -1,0 +1,6 @@
+sku,name,price_usd,term,includes,license_prefix
+PG-FIELD,PackGate Field,99,once,"index.html desk, print view, EvidencePack JSON download",PG-
+PG-SHOP,PackGate Shop,249,once,"Field plus packgate.py, outreach pack, 20-minute setup call",PGS-
+OP-PACK,Operator Pack seat,490,year,"Do not substitute. Evidence-gate seat. PackGate is the desk add-on.",OP-
+date,buyer,email,sku,receipt_last4,license,channel,notes
+,,,,,,"",""
