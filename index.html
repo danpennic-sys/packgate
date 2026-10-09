@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PackGate — EvidencePack desk</title>
+<style>
+  :root { color-scheme: light; --ink:#1c1917; --line:#d6d3d1; --paper:#fafaf9; --accent:#9a3412; }
+  body { margin:0; font:16px/1.45 Georgia, serif; color:var(--ink); background:var(--paper); }
+  main { max-width:720px; margin:0 auto; padding:28px 18px 64px; }
+  h1 { font-size:28px; margin:0 0 6px; }
+  .sub { color:#57534e; margin:0 0 22px; }
+  label { display:block; font:12px/1.2 system-ui, sans-serif; letter-spacing:.04em; text-transform:uppercase; margin:12px 0 4px; }
+  input, textarea { width:100%; box-sizing:border-box; font:16px/1.3 system-ui, sans-serif; padding:8px; border:1px solid var(--line); background:#fff; }
+  button { font:15px system-ui, sans-serif; margin:14px 8px 0 0; padding:8px 14px; background:var(--accent); color:#fff; border:0; }
+  button.alt { background:#44403c; }
+  pre { white-space:pre-wrap; word-break:break-all; background:#fff; border:1px solid var(--line); padding:12px; font:12px/1.4 ui-monospace, monospace; }
+  .ok { color:#166534; } .bad { color:#991b1b; }
+  footer { margin-top:28px; font:13px system-ui, sans-serif; color:#57534e; }
+</style>
+</head>
+<body>
+<main>
+  <h1>PackGate</h1>
+  <p class="sub">Local EvidencePack desk. Hash the close. Nothing leaves this browser. Signature field is a placeholder, not a QuantumGuard proof.</p>
+  <label>Service</label>
+  <input id="service" value="packgate">
+  <label>Job</label>
+  <input id="job" value="JOB-1001">
+  <label>Customer</label>
+  <input id="customer" value="">
+  <label>Total (cents)</label>
+  <input id="total" inputmode="numeric" value="0">
+  <label>Note</label>
+  <textarea id="note" rows="2">closed on desk</textarea>
+  <label>Previous hash</label>
+  <input id="prev" value="GENESIS">
+  <button id="build" type="button">Build pack</button>
+  <button id="download" class="alt" type="button">Download JSON</button>
+  <label>Verify a pack file</label>
+  <input id="file" type="file" accept="application/json,.json">
+  <pre id="out">No pack yet.</pre>
+  <footer>Operator Pages · Missouri · Field $99 once · Shop $249 once · See sell.html</footer>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let last = null;
+
+function compact(value) {
+  return JSON.stringify(value);
+}
+
+async function sha256(parts) {
+  const bytes = parts.map((part) => typeof part === "string" ? new TextEncoder().encode(part) : part);
+  const len = bytes.reduce((n, b) => n + b.length, 0);
+  const buf = new Uint8Array(len);
+  let offset = 0;
+  for (const part of bytes) { buf.set(part, offset); offset += part.length; }
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function chain(pack) {
+  const requestBytes = new TextEncoder().encode(compact(pack.request));
+  const responseBytes = new TextEncoder().encode(compact(pack.response));
+  return sha256([
+    pack.created_at_utc, pack.service, pack.service_version, pack.gateway_version,
+    requestBytes, responseBytes, pack.hash_chain.prev_hash
+  ]);
+}
+
+$("build").onclick = async () => {
+  const created = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+  const request = { path: "/v1/packgate/close", body: { job: $("job").value, customer: $("customer").value } };
+  const response = { status: "closed", total_cents: Number($("total").value || 0), note: $("note").value };
+  const prev = $("prev").value || "GENESIS";
+  const draft = {
+    created_at_utc: created,
+    service: $("service").value || "packgate",
+    service_version: "v20261009-A",
+    gateway_version: "v20261009-G",
+    request, response,
+    hash_chain: { prev_hash: prev, current_hash: "" }
+  };
+  const current = await chain(draft);
+  last = {
+    pack_id: current,
+    created_at_utc: created,
+    service: draft.service,
+    service_version: draft.service_version,
+    gateway_version: draft.gateway_version,
+    request, response,
+    invariants: ["PG-001", "PG-002"],
+    runtime_context: { node_id: "desk", pod_id: "local", region: "us-central-1" },
+    hash_chain: { prev_hash: prev, current_hash: current },
+    signature: "signature_placeholder"
+  };
+  $("prev").value = current;
+  $("out").textContent = JSON.stringify(last, null, 2);
+};
+
+$("download").onclick = () => {
+  if (!last) return;
+  const blob = new Blob([JSON.stringify(last, null, 2) + "\n"], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "packgate-" + last.pack_id.slice(0, 12) + ".json";
+  a.click();
+};
+
+$("file").onchange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const pack = JSON.parse(await file.text());
+  const recomputed = await chain(pack);
+  const ok = recomputed === pack.hash_chain.current_hash && pack.pack_id === pack.hash_chain.current_hash;
+  const sig = pack.signature === "signature_placeholder" || !pack.signature;
+  $("out").innerHTML = (ok ? "<span class='ok'>HASH PASS</span>" : "<span class='bad'>HASH FAIL</span>")
+    + "\nstored " + pack.hash_chain.current_hash
+    + "\nrecomputed " + recomputed
+    + "\n" + (sig ? "signature PLACEHOLDER — not a QuantumGuard proof" : "signature field present — still not a QuantumGuard proof");
+};
+</script>
+</body>
+</html>
